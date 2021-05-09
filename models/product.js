@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const Cart = require("./cart");
 
 const p = path.join(
   path.dirname(process.mainModule.filename),
@@ -17,10 +18,15 @@ const getProductsFromFile = (cb) => {
   });
 };
 
-/* */
+/*
+
+
+
+*/
 
 module.exports = class Product {
-  constructor(title, imageUrl, description, price) {
+  constructor(id, title, imageUrl, description, price) {
+    this.id = id;
     this.title = title;
     this.imageUrl = imageUrl;
     this.description = description;
@@ -28,13 +34,25 @@ module.exports = class Product {
   }
 
   save() {
-    this.id = Math.random().toString();
     getProductsFromFile((productArr) => {
-      productArr.push(this);
+      if (this.id) {
+        const existingProductIndex = productArr.findIndex(
+          (prod) => prod.id == this.id
+        );
+        const updatedProductsArr = [...productArr];
+        updatedProductsArr[existingProductIndex] = this;
 
-      fs.writeFile(p, JSON.stringify(productArr), (err) => {
-        if (err) console.log(`Error: ${err}`);
-      });
+        fs.writeFile(p, JSON.stringify(updatedProductsArr), (err) => {
+          if (err) console.log(`Error: ${err}`);
+        });
+      } else {
+        this.id = Math.random().toString();
+        productArr.push(this);
+
+        fs.writeFile(p, JSON.stringify(productArr), (err) => {
+          if (err) console.log(`Error: ${err}`);
+        });
+      }
     });
   }
 
@@ -44,8 +62,22 @@ module.exports = class Product {
 
   static findById(id, cb) {
     getProductsFromFile((productArr) => {
-      const product = productArr.find(p => p.id === id);
+      const product = productArr.find((p) => p.id === id);
       cb(product);
+    });
+  }
+
+  static deleteById(id, cb) {
+    getProductsFromFile((productsArr) => {
+      const product = productsArr.find((prod) => prod.id === id);
+
+      const updatedProductsArr = productsArr.filter((prod) => prod.id !== id);
+      fs.writeFile(p, JSON.stringify(updatedProductsArr), (err) => {
+        if (err) return console.log(`Error: ${err}`);
+
+        Cart.deleteProduct(id, product.price);
+        cb();
+      });
     });
   }
 };
