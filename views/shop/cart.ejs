@@ -9,19 +9,24 @@
             <h2>No products in cart, add some NOW!</h2>
 
         <% } else { %> 
-            <ul>
+            <ul class="cart__item-list">
                 <% for( prods of cartProducts ) { %>
-                    <li>
-                        <p><%= prods.productData.title %> X <%= prods.qnt %></p>
+                    <li class="cart__item">
+                        <h1><%= prods.title %></h1>
+                        <h2>Quantity: <%= prods.cartItems.quantity %></h2>
 
                         <form action="/cart-delete-item" method="post">
-                            <input type='hidden' name="productId" value="<%= prods.productData.id %>">
-                            <button type="submit" class="btn">Delete</button>
+                            <input type='hidden' name="productId" value="<%= prods.id %>">
+                            <button type="submit" class="btn danger">Delete</button>
                         </form>
                         
                     </li>
                 <% } %>
             </ul>
+            <hr>
+            <form action="create-order" method="POST">
+                <button class="btn" type="submit">Order Now!</button>
+            </form>
         <% } %> 
 
     </main>
