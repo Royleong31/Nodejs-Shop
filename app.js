@@ -1,9 +1,10 @@
+require("dotenv").config();
 const path = require("path");
 const express = require("express");
 const bodyParser = require("body-parser");
+const mongoose = require("mongoose");
 
 const User = require("./models/user");
-const { mongoConnect } = require("./util/databases");
 const adminRoutes = require("./routes/admin");
 const shopRoutes = require("./routes/shop");
 const errorController = require("./controllers/errors");
@@ -14,10 +15,10 @@ app.set("view engine", "ejs");
 app.set("views", "views");
 
 app.use((req, res, next) => {
-  User.findById("609c92524e154172b2ebafe4")
+  User.findById("609d09f559d03b42a88aba2c")
     .then((user) => {
-      req.user = new User(user.name, user.email, user.cart, user._id);
-      console.log('Creating New User');
+      req.user = user;
+      console.log("Creating New User");
       next();
     })
     .catch((err) => console.error(err));
@@ -31,6 +32,23 @@ app.use(shopRoutes);
 
 app.use(errorController.get404);
 
-mongoConnect((_) => {
-  app.listen(3000);
-});
+mongoose
+  .connect(process.env.MONGO_ADDRESS, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then((result) => {
+    User.findOne().then((user) => {
+      if (!user) {
+        const user = new User({
+          name: "Roy",
+          email: "roy@3logytech.com",
+          cart: { items: [] },
+        });
+
+        user.save(); // .save() automatically saves for you
+      }
+    });
+  })
+  .then(() => app.listen(3000))
+  .catch((err) => console.error(err));

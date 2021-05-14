@@ -15,14 +15,13 @@ exports.postAddProduct = (req, res, next) => {
   const description = req.body.description;
   const price = req.body.price;
 
-  const product = new Product(
-    title,
-    price,
-    description,
-    imageUrl,
-    null,
-    req.user._id
-  );
+  const product = new Product({
+    title: title,
+    imageUrl: imageUrl,
+    description: description,
+    price: price,
+    userId: req.user,
+  });
 
   product
     .save()
@@ -55,18 +54,23 @@ exports.getEditProduct = (req, res, next) => {
 
 exports.postEditProduct = (req, res, next) => {
   const productId = req.body.productId;
-
   const title = req.body.title;
   const imageUrl = req.body.imageUrl;
   const description = req.body.description;
   const price = req.body.price;
-  const product = new Product(title, price, description, imageUrl, productId);
 
-  product
-    .save()
+  Product.findById(productId)
+    .then((product) => {
+      product.title = title;
+      product.imageUrl = imageUrl;
+      product.description = description;
+      product.price = price;
+
+      return product.save();
+    })
     .then(() => {
       console.log("UPDATED PRODUCT");
-      res.redirect("/");
+      res.redirect("/admin/products");
     })
     .catch((err) => console.error(err));
 };
@@ -74,8 +78,11 @@ exports.postEditProduct = (req, res, next) => {
 
 // !: GET PRODUCTS
 exports.getProducts = (req, res, next) => {
-  Product.fetchAll()
+  Product.find()
+    // .select('imageUrl') select can choose the fields that you want to get
+    .populate("userId")
     .then((prods) => {
+      console.log(prods);
       res.render("admin/admin-product-list", {
         prods,
         pageTitle: "Admin Products",
@@ -91,7 +98,7 @@ exports.deleteProduct = (req, res, next) => {
   const productId = req.body.productId;
   console.log(`Product ID of deleted product: ${productId}`);
 
-  Product.deleteById(productId)
+  Product.findByIdAndRemove(productId)
     .then((result) => {
       res.redirect("/admin/products");
     })
